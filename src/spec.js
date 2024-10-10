@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "@jest/globals";
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from "@jest/globals";
 import postgres from "postgres";
 import { Program, Trace } from "tds.ts";
 
@@ -7,16 +7,23 @@ describe("tds.pg", () => {
   beforeAll(() => sql.file("src/tds-pg.sql"));
   afterAll(() => sql.end());
 
-  test("with errors", async () => {
-    const X = new Program([new Trace("trace").step("@").step("x").step("y")]);
+  const X = new Program([
+    new Trace("trace") //
+      .step("@", { output: { state: "x" } })
+      .step("x", { output: { state: "y" } })
+      .step("y"),
+  ]);
 
-    await sql`
+  beforeEach(() =>
+    sql`
       drop table if exists "test" cascade;
       create table "test" (
         "state" text
       );
-    `.simple();
+    `.simple(),
+  );
 
+  test("with errors", async () => {
     await sql`
       select "tds_setup"(
         "table" => 'test',
@@ -44,15 +51,6 @@ describe("tds.pg", () => {
   });
 
   test("without errors", async () => {
-    const X = new Program([new Trace("trace").step("@").step("x").step("y")]);
-
-    await sql`
-      drop table if exists "test" cascade;
-      create table "test" (
-        "state" text
-      );
-    `.simple();
-
     await sql`
       select "tds_setup"(
         "table" => 'test',

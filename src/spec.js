@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "@jest/globals";
 import postgres from "postgres";
-import { Implementation, Program, Trace } from "tds.ts";
+import { Program, Trace } from "tds.ts";
 
 describe("tds.pg", () => {
   const sql = postgres();
@@ -9,13 +9,6 @@ describe("tds.pg", () => {
 
   test("with errors", async () => {
     const X = new Program([new Trace("trace").step("@").step("x").step("y")]);
-    const x = new Implementation(X)
-      .transition("@", "x", async () => {
-        return ["y"];
-      })
-      .transition("x", "y", async () => {
-        return ["@"];
-      });
 
     await sql`
       drop table if exists "test" cascade;
@@ -52,13 +45,6 @@ describe("tds.pg", () => {
 
   test("without errors", async () => {
     const X = new Program([new Trace("trace").step("@").step("x").step("y")]);
-    const x = new Implementation(X)
-      .transition("@", "x", async () => {
-        return ["y"];
-      })
-      .transition("x", "y", async () => {
-        return ["@"];
-      });
 
     await sql`
       drop table if exists "test" cascade;

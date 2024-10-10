@@ -26,19 +26,23 @@ describe("tds.pg", () => {
 
     await sql`
       select "tds_setup"(
-        "table" => 'test',
-        "column" => 'state',
-        "states" => ${X.states},
-        "transitions" => ${X.transitions}
+        "~table" => 'test',
+        "~column" => 'state',
+        "~states" => ${X.states},
+        "~transitions" => ${X.transitions}
       )
     `;
 
     await expect(sql`
       insert into "test" ("state") values ('wrong')
-    `).rejects.toThrow("tds_state_check");
+    `).rejects.toThrow("tds_transition_check");
 
     await sql`
       insert into "test" ("state") values ('x')
     `;
+
+    await expect(sql`
+      update "test" set "state" = 'wrong'
+    `).rejects.toThrow("tds_transition_check");
   });
 });

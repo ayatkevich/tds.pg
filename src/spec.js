@@ -19,10 +19,10 @@ describe("tds.pg", () => {
 
     await sql`
       select "tds_setup"(
-        "~table" => 'test',
-        "~column" => 'state',
-        "~states" => ${X.states},
-        "~transitions" => ${X.transitions}
+        "table" => 'test',
+        "column" => 'state',
+        "states" => ${X.states},
+        "transitions" => ${X.transitions}
       )
     `;
 
@@ -55,11 +55,11 @@ describe("tds.pg", () => {
 
     await sql`
       select "tds_setup"(
-        "~table" => 'test',
-        "~column" => 'state',
-        "~states" => ${X.states},
-        "~transitions" => ${X.transitions},
-        "~noErrors" => true
+        "table" => 'test',
+        "column" => 'state',
+        "states" => ${X.states},
+        "transitions" => ${X.transitions},
+        "no_errors" => true
       )
     `;
 

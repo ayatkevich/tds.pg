@@ -17,7 +17,9 @@ create or replace function "tds_check_transition"() returns trigger as $$
       if "~noErrors" then
         return null;
       else
-        raise exception 'tds_transition_check: incorrect transition from % to %', "~old"->>"~column", "~new"->>"~column";
+        raise exception 'tds_transition_check: incorrect transition from % to %',
+          "~old"->>"~column",
+          "~new"->>"~column";
       end if;
     end if;
     return new;
@@ -25,11 +27,11 @@ create or replace function "tds_check_transition"() returns trigger as $$
 $$ language plpgsql;
 
 create or replace function "tds_setup"(
-  "~table" text,
-  "~column" text = 'state',
-  "~states" text[] = array[]::text[],
-  "~transitions" text[][] = array[]::text[][],
-  "~noErrors" boolean = false
+  "table" text,
+  "column" text = 'state',
+  "states" text[] = array[]::text[],
+  "transitions" text[][] = array[]::text[][],
+  "no_errors" boolean = false
 ) returns void as $$
   begin
     execute format(
@@ -38,10 +40,10 @@ create or replace function "tds_setup"(
         for each row
         execute procedure "tds_check_transition"(%L, %L, %L)
       $query$,
-      "~table",
-      "~column",
-      "~transitions",
-      "~noErrors"
+      "table",
+      "column",
+      "transitions",
+      "no_errors"
     );
   end
 $$ language plpgsql;

@@ -35,7 +35,25 @@ create or replace function "tds_setup"(
   "transitions" text[][] = array[]::text[][],
   "no_errors" boolean = false
 ) returns void as $$
+  declare
+    "~primaryKey" text[] = (
+      select array_agg(attName)
+        from pg_class
+          inner join pg_constraint
+            on conRelId = pg_class.oid
+          inner join pg_attribute
+            on attNum = any(conKey)
+              and attRelId = pg_class.oid
+        where relKind = 'r'
+          and relName = "table"
+          and relNamespace::regNamespace::text = "schema"
+          and conType = 'p'
+    );
   begin
+    if "~primaryKey" is null then
+      raise exception 'tds_setup: table % has no primary key', "table";
+    end if;
+
     execute format(
       $query$
         create trigger "tds_transition_check" before insert or update on %I.%I

@@ -24,8 +24,14 @@ describe("tds.pg", () => {
 
   beforeEach(() =>
     sql`
-      drop table if exists "test" cascade;
-      create table "test" (
+      drop table if exists "compatible" cascade;
+      create table "compatible" (
+        "id" serial primary key,
+        "state" text
+      );
+
+      drop table if exists "no primary key" cascade;
+      create table "no primary key" (
         "state" text
       );
     `.simple(),
@@ -35,11 +41,23 @@ describe("tds.pg", () => {
     await x.test();
   });
 
+  test("no primary key", async () => {
+    await expect(sql`
+      select "tds_setup"(
+        "schema" => 'public',
+        "table" => 'no primary key',
+        "column" => 'state',
+        "states" => ${X.states},
+        "transitions" => ${X.transitions}
+      )
+    `).rejects.toThrow("tds_setup");
+  });
+
   test("with errors", async () => {
     await sql`
       select "tds_setup"(
         "schema" => 'public',
-        "table" => 'test',
+        "table" => 'compatible',
         "column" => 'state',
         "states" => ${X.states},
         "transitions" => ${X.transitions}
@@ -47,19 +65,19 @@ describe("tds.pg", () => {
     `;
 
     await expect(sql`
-      insert into "test" ("state") values ('wrong')
+      insert into "compatible" ("state") values ('wrong')
     `).rejects.toThrow("tds_transition_check");
 
     await sql`
-      insert into "test" ("state") values ('x')
+      insert into "compatible" ("state") values ('x')
     `;
 
     await expect(sql`
-      update "test" set "state" = 'wrong'
+      update "compatible" set "state" = 'wrong'
     `).rejects.toThrow("tds_transition_check");
 
     await sql`
-      update "test" set "state" = 'y'
+      update "compatible" set "state" = 'y'
     `;
   });
 
@@ -67,7 +85,7 @@ describe("tds.pg", () => {
     await sql`
       select "tds_setup"(
         "schema" => 'public',
-        "table" => 'test',
+        "table" => 'compatible',
         "column" => 'state',
         "states" => ${X.states},
         "transitions" => ${X.transitions},
@@ -76,19 +94,19 @@ describe("tds.pg", () => {
     `;
 
     await expect(sql`
-      insert into "test" ("state") values ('wrong') returning *
+      insert into "compatible" ("state") values ('wrong') returning *
     `).resolves.toEqual([]);
 
     await expect(sql`
-      insert into "test" ("state") values ('x') returning *
-    `).resolves.toEqual([{ state: "x" }]);
+      insert into "compatible" ("state") values ('x') returning *
+    `).resolves.toEqual([{ id: 2, state: "x" }]);
 
     await expect(sql`
-      update "test" set "state" = 'wrong' returning *
+      update "compatible" set "state" = 'wrong' returning *
     `).resolves.toEqual([]);
 
     await expect(sql`
-      update "test" set "state" = 'y' returning *
-    `).resolves.toEqual([{ state: "y" }]);
+      update "compatible" set "state" = 'y' returning *
+    `).resolves.toEqual([{ id: 2, state: "y" }]);
   });
 });

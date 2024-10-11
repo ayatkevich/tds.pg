@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "@jest/globals";
 import postgres from "postgres";
-import { Program, Trace } from "tds.ts";
+import { Implementation, Program, Trace } from "tds.ts";
 
 describe("tds.pg", () => {
   const sql = postgres();
@@ -14,6 +14,14 @@ describe("tds.pg", () => {
       .step("y"),
   ]);
 
+  const x = new Implementation(X)
+    .transition("@", "x", ({ state }) => {
+      return ["y", { state: "y" }];
+    })
+    .transition("x", "y", ({ state }) => {
+      return ["@", { state }];
+    });
+
   beforeEach(() =>
     sql`
       drop table if exists "test" cascade;
@@ -22,6 +30,10 @@ describe("tds.pg", () => {
       );
     `.simple(),
   );
+
+  test("implementation", async () => {
+    await x.test();
+  });
 
   test("with errors", async () => {
     await sql`

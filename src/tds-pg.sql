@@ -26,7 +26,9 @@ create or replace function "tds_check_transition"() returns trigger as $$
   end
 $$ language plpgsql;
 
+drop function if exists "tds_setup" (text, text, text, text[], text[][], boolean);
 create or replace function "tds_setup"(
+  "schema" text,
   "table" text,
   "column" text = 'state',
   "states" text[] = array[]::text[],
@@ -36,10 +38,11 @@ create or replace function "tds_setup"(
   begin
     execute format(
       $query$
-        create trigger "tds_transition_check" before insert or update on %I
+        create trigger "tds_transition_check" before insert or update on %I.%I
         for each row
         execute procedure "tds_check_transition"(%L, %L, %L)
       $query$,
+      "schema",
       "table",
       "column",
       "transitions",

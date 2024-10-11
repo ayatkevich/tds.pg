@@ -38,6 +38,7 @@ describe("tds.pg", () => {
   test("with errors", async () => {
     await sql`
       select "tds_setup"(
+        "schema" => 'public',
         "table" => 'test',
         "column" => 'state',
         "states" => ${X.states},
@@ -65,6 +66,7 @@ describe("tds.pg", () => {
   test("without errors", async () => {
     await sql`
       select "tds_setup"(
+        "schema" => 'public',
         "table" => 'test',
         "column" => 'state',
         "states" => ${X.states},

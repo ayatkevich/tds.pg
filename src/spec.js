@@ -47,7 +47,6 @@ describe("tds.pg", () => {
         "schema" => 'public',
         "table" => 'no primary key',
         "column" => 'state',
-        "states" => ${X.states},
         "transitions" => ${X.transitions}
       )
     `).rejects.toThrow("tds_setup");
@@ -59,7 +58,6 @@ describe("tds.pg", () => {
         "schema" => 'public',
         "table" => 'compatible',
         "column" => 'state',
-        "states" => ${X.states},
         "transitions" => ${X.transitions}
       )
     `;
@@ -87,7 +85,6 @@ describe("tds.pg", () => {
         "schema" => 'public',
         "table" => 'compatible',
         "column" => 'state',
-        "states" => ${X.states},
         "transitions" => ${X.transitions},
         "no_errors" => true
       )

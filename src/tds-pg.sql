@@ -34,15 +34,16 @@ create or replace function "tds_notify_transition"() returns trigger as $$
     "~old" jsonb = to_jsonb(old);
     "~new" jsonb = to_jsonb(new);
     "~notification" jsonb = jsonb_build_object(
-      'from', "~old"->>"~column",
+      'from', coalesce("~old"->>"~column", '@'),
       'to', "~new"->>"~column"
     );
+    "~reference" jsonb = jsonb_build_object();
     "~key" text;
   begin
     foreach "~key" in array "~primaryKey" loop
-      "~notification" = "~notification" || jsonb_build_object("~key", "~new"->"~key");
+      "~reference" = "~reference" || jsonb_build_object("~key", "~new"->"~key");
     end loop;
-    perform pg_notify("~notificationName", "~notification"::text);
+    perform pg_notify("~notificationName", ("~notification" || jsonb_build_object('reference', "~reference"))::text);
     return new;
   end
 $$ language plpgsql;

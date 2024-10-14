@@ -86,8 +86,8 @@ describe("tds.pg", () => {
 
       await setTimeout(1);
 
-      expect(fn).toHaveBeenNthCalledWith(1, { id: 2, from: null, to: "x" });
-      expect(fn).toHaveBeenNthCalledWith(2, { id: 2, from: "x", to: "y" });
+      expect(fn).toHaveBeenNthCalledWith(1, { reference: { id: 2 }, from: "@", to: "x" });
+      expect(fn).toHaveBeenNthCalledWith(2, { reference: { id: 2 }, from: "x", to: "y" });
       expect(fn).toHaveBeenCalledTimes(2);
     } finally {
       await unlisten();
@@ -128,8 +128,8 @@ describe("tds.pg", () => {
 
       await setTimeout(1);
 
-      expect(fn).toHaveBeenNthCalledWith(1, { id: 2, from: null, to: "x" });
-      expect(fn).toHaveBeenNthCalledWith(2, { id: 2, from: "x", to: "y" });
+      expect(fn).toHaveBeenNthCalledWith(1, { reference: { id: 2 }, from: "@", to: "x" });
+      expect(fn).toHaveBeenNthCalledWith(2, { reference: { id: 2 }, from: "x", to: "y" });
       expect(fn).toHaveBeenCalledTimes(2);
     } finally {
       await unlisten();

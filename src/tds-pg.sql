@@ -26,6 +26,27 @@ create or replace function "tds_check_transition"() returns trigger as $$
   end
 $$ language plpgsql;
 
+create or replace function "tds_notify_transition"() returns trigger as $$
+  declare
+    "~notificationName" text = tg_argv[0];
+    "~column" text = tg_argv[1];
+    "~primaryKey" text[] = tg_argv[2];
+    "~old" jsonb = to_jsonb(old);
+    "~new" jsonb = to_jsonb(new);
+    "~notification" jsonb = jsonb_build_object(
+      'from', "~old"->>"~column",
+      'to', "~new"->>"~column"
+    );
+    "~key" text;
+  begin
+    foreach "~key" in array "~primaryKey" loop
+      "~notification" = "~notification" || jsonb_build_object("~key", "~new"->"~key");
+    end loop;
+    perform pg_notify("~notificationName", "~notification"::text);
+    return new;
+  end
+$$ language plpgsql;
+
 drop function if exists "tds_setup" (text, text, text, text[][], boolean);
 create or replace function "tds_setup"(
   "schema" text,
@@ -64,6 +85,19 @@ create or replace function "tds_setup"(
       "column",
       "transitions",
       "no_errors"
+    );
+
+    execute format(
+      $query$
+        create trigger "tds_transition_notify" after insert or update on %I.%I
+        for each row
+        execute procedure "tds_notify_transition"(%L, %L, %L)
+      $query$,
+      "schema",
+      "table",
+      format('%s_%s_%s_transition', "schema", "table", "column"),
+      "column",
+      "~primaryKey"
     );
   end
 $$ language plpgsql;

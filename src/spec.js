@@ -1,6 +1,7 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "@jest/globals";
+import { afterAll, beforeAll, beforeEach, describe, expect, jest, test } from "@jest/globals";
 import postgres from "postgres";
 import { Implementation, Program, Trace } from "tds.ts";
+import { setTimeout } from "timers/promises";
 
 describe("tds.pg", () => {
   const sql = postgres();
@@ -62,21 +63,35 @@ describe("tds.pg", () => {
       )
     `;
 
-    await expect(sql`
-      insert into "compatible" ("state") values ('wrong')
-    `).rejects.toThrow("tds_transition_check");
+    const fn = jest.fn();
+    const { unlisten } = await sql.listen("public_compatible_state_transition", (data) =>
+      fn(JSON.parse(data)),
+    );
+    try {
+      await expect(sql`
+        insert into "compatible" ("state") values ('wrong')
+      `).rejects.toThrow("tds_transition_check");
 
-    await sql`
-      insert into "compatible" ("state") values ('x')
-    `;
+      await sql`
+        insert into "compatible" ("state") values ('x')
+      `;
 
-    await expect(sql`
-      update "compatible" set "state" = 'wrong'
-    `).rejects.toThrow("tds_transition_check");
+      await expect(sql`
+        update "compatible" set "state" = 'wrong'
+      `).rejects.toThrow("tds_transition_check");
 
-    await sql`
-      update "compatible" set "state" = 'y'
-    `;
+      await sql`
+        update "compatible" set "state" = 'y'
+      `;
+
+      await setTimeout(1);
+
+      expect(fn).toHaveBeenNthCalledWith(1, { id: 2, from: null, to: "x" });
+      expect(fn).toHaveBeenNthCalledWith(2, { id: 2, from: "x", to: "y" });
+      expect(fn).toHaveBeenCalledTimes(2);
+    } finally {
+      await unlisten();
+    }
   });
 
   test("without errors", async () => {
@@ -90,20 +105,34 @@ describe("tds.pg", () => {
       )
     `;
 
-    await expect(sql`
+    const fn = jest.fn();
+    const { unlisten } = await sql.listen("public_compatible_state_transition", (data) =>
+      fn(JSON.parse(data)),
+    );
+    try {
+      await expect(sql`
       insert into "compatible" ("state") values ('wrong') returning *
     `).resolves.toEqual([]);
 
-    await expect(sql`
+      await expect(sql`
       insert into "compatible" ("state") values ('x') returning *
     `).resolves.toEqual([{ id: 2, state: "x" }]);
 
-    await expect(sql`
+      await expect(sql`
       update "compatible" set "state" = 'wrong' returning *
     `).resolves.toEqual([]);
 
-    await expect(sql`
+      await expect(sql`
       update "compatible" set "state" = 'y' returning *
     `).resolves.toEqual([{ id: 2, state: "y" }]);
+
+      await setTimeout(1);
+
+      expect(fn).toHaveBeenNthCalledWith(1, { id: 2, from: null, to: "x" });
+      expect(fn).toHaveBeenNthCalledWith(2, { id: 2, from: "x", to: "y" });
+      expect(fn).toHaveBeenCalledTimes(2);
+    } finally {
+      await unlisten();
+    }
   });
 });

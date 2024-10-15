@@ -3,7 +3,7 @@
   "name": "tds.pg",
   "version": "0.1.0",
   "dependencies": {
-    "tds.ts": "0.14.0"
+    "tds.ts": "0.15.0"
   },
   "devDependencies": {
     "@jest/globals": "29.7.0",

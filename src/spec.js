@@ -13,7 +13,7 @@ describe("tds.pg", () => {
     new Trace("trace") //
       .step("@", { output: { state: "x" } })
       .step("x", { output: { state: "y" } })
-      .step("y"),
+      .step("y", { output: { state: "y" } }),
   ]);
 
   const x = new Implementation(X)
@@ -44,14 +44,25 @@ describe("tds.pg", () => {
   });
 
   test("no primary key", async () => {
-    const table = new Table(sql, "public", "no primary key", "state");
-    await expect(table.setup(X)).rejects.toThrow("tds_setup");
+    await expect(
+      new Table(sql, {
+        schema: "public",
+        table: "no primary key",
+        column: "state",
+        program: X,
+      }).setup(),
+    ).rejects.toThrow("tds_setup");
   });
 
-  const table = new Table(sql, "public", "compatible", "state");
+  const table = new Table(sql, {
+    schema: "public",
+    table: "compatible",
+    column: "state",
+    program: X,
+  });
 
   test("with errors", async () => {
-    await table.setup(X);
+    await table.setup();
 
     const fn = jest.fn();
     const { unlisten } = await sql.listen("public_compatible_state_transition", (data) =>
@@ -85,7 +96,7 @@ describe("tds.pg", () => {
   });
 
   test("without errors", async () => {
-    await table.setup(X, { noErrors: true });
+    await table.setup({ noErrors: true });
 
     const fn = jest.fn();
     const { unlisten } = await sql.listen("public_compatible_state_transition", (data) =>
@@ -116,5 +127,11 @@ describe("tds.pg", () => {
     } finally {
       await unlisten();
     }
+  });
+
+  test("test outputs", async () => {
+    await table.setup();
+
+    await table.testOutputs();
   });
 });

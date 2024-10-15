@@ -50,22 +50,26 @@ export class Table {
           .map(([column, value]) => this.sql`${this.sql(column)} is not distinct from ${value}`)
           .reduce((where, reference) => this.sql`${where} and ${reference}`, this.sql`true`);
 
-        const [input] = await this.sql`
-          select *
-            from ${this.sql(this.schema)}.${this.sql(this.table)}
-            where ${reference}
-        `;
+        await this.sql.begin(async (sql) => {
+          const [input] = await sql`
+            select *
+              from ${sql(this.schema)}.${sql(this.table)}
+              where ${reference}
+              for update skip locked
+          `;
+          if (!input) return;
 
-        const [state, output] = await implementation.execute(data.from, data.to, input);
+          const [state, output] = await implementation.execute(data.from, data.to, input);
 
-        if (state === "@") return;
+          if (state === "@") return;
 
-        await this.sql`
-          update ${this.sql(this.schema)}.${this.sql(this.table)}
-            set ${this.sql(output)}
-            where ${reference}
-            returning *
-        `;
+          await sql`
+            update ${sql(this.schema)}.${sql(this.table)}
+              set ${sql(output)}
+              where ${reference}
+              returning *
+          `;
+        });
       },
     );
     return async () => {

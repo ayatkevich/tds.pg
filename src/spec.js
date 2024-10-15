@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, jest, test } from "@
 import postgres from "postgres";
 import { Implementation, Program, Trace } from "tds.ts";
 import { setTimeout } from "timers/promises";
+import { Table } from "./index.js";
 
 describe("tds.pg", () => {
   const sql = postgres();
@@ -43,25 +44,14 @@ describe("tds.pg", () => {
   });
 
   test("no primary key", async () => {
-    await expect(sql`
-      select "tds_setup"(
-        "schema" => 'public',
-        "table" => 'no primary key',
-        "column" => 'state',
-        "transitions" => ${X.transitions}
-      )
-    `).rejects.toThrow("tds_setup");
+    const table = new Table(sql, "public", "no primary key", "state");
+    await expect(table.setup(X)).rejects.toThrow("tds_setup");
   });
 
+  const table = new Table(sql, "public", "compatible", "state");
+
   test("with errors", async () => {
-    await sql`
-      select "tds_setup"(
-        "schema" => 'public',
-        "table" => 'compatible',
-        "column" => 'state',
-        "transitions" => ${X.transitions}
-      )
-    `;
+    await table.setup(X);
 
     const fn = jest.fn();
     const { unlisten } = await sql.listen("public_compatible_state_transition", (data) =>
@@ -95,15 +85,7 @@ describe("tds.pg", () => {
   });
 
   test("without errors", async () => {
-    await sql`
-      select "tds_setup"(
-        "schema" => 'public',
-        "table" => 'compatible',
-        "column" => 'state',
-        "transitions" => ${X.transitions},
-        "no_errors" => true
-      )
-    `;
+    await table.setup(X, { noErrors: true });
 
     const fn = jest.fn();
     const { unlisten } = await sql.listen("public_compatible_state_transition", (data) =>

@@ -39,8 +39,17 @@ describe("tds.pg", () => {
     `.simple(),
   );
 
+  const table = new Table(sql, {
+    schema: "public",
+    table: "compatible",
+    column: "state",
+    program: X,
+  });
+
   test("implementation", async () => {
     await x.test();
+    await table.setup();
+    await table.testOutputs();
   });
 
   test("no primary key", async () => {
@@ -52,13 +61,6 @@ describe("tds.pg", () => {
         program: X,
       }).setup(),
     ).rejects.toThrow("tds_setup");
-  });
-
-  const table = new Table(sql, {
-    schema: "public",
-    table: "compatible",
-    column: "state",
-    program: X,
   });
 
   test("with errors", async () => {
@@ -127,11 +129,5 @@ describe("tds.pg", () => {
     } finally {
       await unlisten();
     }
-  });
-
-  test("test outputs", async () => {
-    await table.setup();
-
-    await table.testOutputs();
   });
 });

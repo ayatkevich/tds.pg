@@ -20,8 +20,8 @@ describe("tds.pg", () => {
     .transition("@", "x", ({ state }) => {
       return ["y", { state: "y" }];
     })
-    .transition("x", "y", ({ state }) => {
-      return ["@", { state }];
+    .transition("x", "y", (row) => {
+      return ["@", row];
     });
 
   beforeEach(() =>
@@ -87,7 +87,7 @@ describe("tds.pg", () => {
         update "compatible" set "state" = 'y'
       `;
 
-      await setTimeout(1);
+      await setTimeout(10);
 
       expect(fn).toHaveBeenNthCalledWith(1, { reference: { id: 2 }, from: "@", to: "x" });
       expect(fn).toHaveBeenNthCalledWith(2, { reference: { id: 2 }, from: "x", to: "y" });
@@ -121,13 +121,33 @@ describe("tds.pg", () => {
       update "compatible" set "state" = 'y' returning *
     `).resolves.toEqual([{ id: 2, state: "y" }]);
 
-      await setTimeout(1);
+      await setTimeout(10);
 
       expect(fn).toHaveBeenNthCalledWith(1, { reference: { id: 2 }, from: "@", to: "x" });
       expect(fn).toHaveBeenNthCalledWith(2, { reference: { id: 2 }, from: "x", to: "y" });
       expect(fn).toHaveBeenCalledTimes(2);
     } finally {
       await unlisten();
+    }
+  });
+
+  test("handling", async () => {
+    await table.setup();
+
+    const stop = await table.handle(x);
+
+    try {
+      await sql`
+        insert into "compatible" ("state") values ('x')
+      `;
+
+      await setTimeout(10);
+
+      await expect(sql`
+        select * from "compatible"
+      `).resolves.toEqual([{ id: 1, state: "y" }]);
+    } finally {
+      await stop();
     }
   });
 });

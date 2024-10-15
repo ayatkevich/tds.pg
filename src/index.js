@@ -39,4 +39,37 @@ export class Table {
       }
     }
   }
+
+  async handle(/** @type {import("tds.ts").Implementation} */ implementation) {
+    const { unlisten } = await this.sql.listen(
+      `${this.schema}_${this.table}_${this.column}_transition`,
+      async (data) => {
+        data = JSON.parse(data);
+
+        const reference = Object.entries(data.reference)
+          .map(([column, value]) => this.sql`${this.sql(column)} is not distinct from ${value}`)
+          .reduce((where, reference) => this.sql`${where} and ${reference}`, this.sql`true`);
+
+        const [input] = await this.sql`
+          select *
+            from ${this.sql(this.schema)}.${this.sql(this.table)}
+            where ${reference}
+        `;
+
+        const [state, output] = await implementation.execute(data.from, data.to, input);
+
+        if (state === "@") return;
+
+        await this.sql`
+          update ${this.sql(this.schema)}.${this.sql(this.table)}
+            set ${this.sql(output)}
+            where ${reference}
+            returning *
+        `;
+      },
+    );
+    return async () => {
+      await unlisten();
+    };
+  }
 }

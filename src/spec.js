@@ -134,7 +134,8 @@ describe("tds.pg", () => {
   test("handling", async () => {
     await table.setup();
 
-    const stop = await table.handle(x);
+    const stop1 = await table.handle(x);
+    const stop2 = await table.handle(x);
 
     try {
       await sql`
@@ -147,7 +148,8 @@ describe("tds.pg", () => {
         select * from "compatible"
       `).resolves.toEqual([{ id: 1, state: "y" }]);
     } finally {
-      await stop();
+      await stop1();
+      await stop2();
     }
   });
 });

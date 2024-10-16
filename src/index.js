@@ -60,13 +60,16 @@ export class Table {
           `;
           if (!input) return;
 
-          const [state, output] = await implementation.execute(data.from, data.to, input);
+          const [state, { record }] = await implementation.execute(data.from, data.to, {
+            record: input,
+            sql,
+          });
 
           if (state === "@") return;
 
           await sql`
             update ${sql(this.schema)}.${sql(this.table)}
-              set ${sql(output)}
+              set ${sql(record)}
               where ${reference}
               returning *
           `;

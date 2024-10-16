@@ -11,17 +11,17 @@ describe("tds.pg", () => {
 
   const X = new Program([
     new Trace("trace") //
-      .step("@", { output: { state: "x" } })
-      .step("x", { output: { state: "y" } })
-      .step("y", { output: { state: "y" } }),
+      .step("@", { output: { record: { state: "x" }, sql } })
+      .step("x", { output: { record: { state: "y" }, sql } })
+      .step("y", { output: { record: { state: "y" }, sql } }),
   ]);
 
   const x = new Implementation(X)
-    .transition("@", "x", ({ state }) => {
-      return ["y", { state: "y" }];
+    .transition("@", "x", async (it) => {
+      return ["y", { ...it, record: { state: "y" } }];
     })
-    .transition("x", "y", (row) => {
-      return ["@", row];
+    .transition("x", "y", async (it) => {
+      return ["@", it];
     });
 
   beforeEach(() =>

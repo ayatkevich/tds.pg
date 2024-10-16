@@ -55,6 +55,7 @@ export class Table {
             select *
               from ${sql(this.schema)}.${sql(this.table)}
               where ${reference}
+                and ${this.sql(this.column)} = ${data.to}
               for update skip locked
           `;
           if (!input) return;

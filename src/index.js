@@ -10,6 +10,10 @@ export class Table {
     this.program = program;
   }
 
+  get channel() {
+    return `${this.schema}_${this.table}_${this.column}_transition`;
+  }
+
   async setup({ noErrors = false } = {}) {
     return this.sql`
       select "tds_setup"(
@@ -79,12 +83,8 @@ export class Table {
     });
   }
 
-  get #channel() {
-    return `${this.schema}_${this.table}_${this.column}_transition`;
-  }
-
   async #listen(fn) {
-    const { unlisten } = await this.sql.listen(this.#channel, async (data) => {
+    const { unlisten } = await this.sql.listen(this.channel, async (data) => {
       data = JSON.parse(data);
 
       const reference = Object.entries(data.reference)

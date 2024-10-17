@@ -40,42 +40,61 @@ export class Table {
     }
   }
 
+  async listen(fn) {
+    return this.#listen(async ({ sql, reference, data }) => {
+      const [input] = await sql`
+        select *
+          from ${sql(this.schema)}.${sql(this.table)}
+          where ${reference}
+      `;
+
+      await fn({ ...data, record: input });
+    });
+  }
+
   async handle(/** @type {import("tds.ts").Implementation} */ implementation) {
-    const { unlisten } = await this.sql.listen(
-      `${this.schema}_${this.table}_${this.column}_transition`,
-      async (data) => {
-        data = JSON.parse(data);
+    return this.#listen(async ({ sql, reference, data }) => {
+      const [input] = await sql`
+        select *
+          from ${sql(this.schema)}.${sql(this.table)}
+          where ${reference}
+            and ${this.sql(this.column)} = ${data.to}
+          for update skip locked
+      `;
+      if (!input) return;
 
-        const reference = Object.entries(data.reference)
-          .map(([column, value]) => this.sql`${this.sql(column)} is not distinct from ${value}`)
-          .reduce((where, reference) => this.sql`${where} and ${reference}`, this.sql`true`);
+      const [state, { record }] = await implementation.execute(data.from, data.to, {
+        record: input,
+        sql,
+      });
 
-        await this.sql.begin(async (sql) => {
-          const [input] = await sql`
-            select *
-              from ${sql(this.schema)}.${sql(this.table)}
-              where ${reference}
-                and ${this.sql(this.column)} = ${data.to}
-              for update skip locked
-          `;
-          if (!input) return;
+      if (state === "@") return;
 
-          const [state, { record }] = await implementation.execute(data.from, data.to, {
-            record: input,
-            sql,
-          });
+      await sql`
+        update ${sql(this.schema)}.${sql(this.table)}
+          set ${sql(record)}
+          where ${reference}
+          returning *
+      `;
+    });
+  }
 
-          if (state === "@") return;
+  get #channel() {
+    return `${this.schema}_${this.table}_${this.column}_transition`;
+  }
 
-          await sql`
-            update ${sql(this.schema)}.${sql(this.table)}
-              set ${sql(record)}
-              where ${reference}
-              returning *
-          `;
-        });
-      },
-    );
+  async #listen(fn) {
+    const { unlisten } = await this.sql.listen(this.#channel, async (data) => {
+      data = JSON.parse(data);
+
+      const reference = Object.entries(data.reference)
+        .map(([column, value]) => this.sql`${this.sql(column)} is not distinct from ${value}`)
+        .reduce((where, reference) => this.sql`${where} and ${reference}`, this.sql`true`);
+
+      await this.sql.begin(async (sql) => {
+        await fn({ sql, reference, data });
+      });
+    });
     return async () => {
       await unlisten();
     };

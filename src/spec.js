@@ -67,9 +67,8 @@ describe("tds.pg", () => {
     await table.setup();
 
     const fn = jest.fn();
-    const { unlisten } = await sql.listen("public_compatible_state_transition", (data) =>
-      fn(JSON.parse(data)),
-    );
+    const stop = await table.listen(fn);
+
     try {
       await expect(sql`
         insert into "compatible" ("state") values ('wrong')
@@ -78,6 +77,8 @@ describe("tds.pg", () => {
       await sql`
         insert into "compatible" ("state") values ('x')
       `;
+
+      await setTimeout(10);
 
       await expect(sql`
         update "compatible" set "state" = 'wrong'
@@ -89,11 +90,21 @@ describe("tds.pg", () => {
 
       await setTimeout(10);
 
-      expect(fn).toHaveBeenNthCalledWith(1, { reference: { id: 2 }, from: "@", to: "x" });
-      expect(fn).toHaveBeenNthCalledWith(2, { reference: { id: 2 }, from: "x", to: "y" });
+      expect(fn).toHaveBeenNthCalledWith(1, {
+        reference: { id: 2 },
+        record: { id: 2, state: "x" },
+        from: "@",
+        to: "x",
+      });
+      expect(fn).toHaveBeenNthCalledWith(2, {
+        reference: { id: 2 },
+        record: { id: 2, state: "y" },
+        from: "x",
+        to: "y",
+      });
       expect(fn).toHaveBeenCalledTimes(2);
     } finally {
-      await unlisten();
+      await stop();
     }
   });
 
@@ -101,9 +112,8 @@ describe("tds.pg", () => {
     await table.setup({ noErrors: true });
 
     const fn = jest.fn();
-    const { unlisten } = await sql.listen("public_compatible_state_transition", (data) =>
-      fn(JSON.parse(data)),
-    );
+    const stop = await table.listen(fn);
+
     try {
       await expect(sql`
       insert into "compatible" ("state") values ('wrong') returning *
@@ -112,6 +122,8 @@ describe("tds.pg", () => {
       await expect(sql`
       insert into "compatible" ("state") values ('x') returning *
     `).resolves.toEqual([{ id: 2, state: "x" }]);
+
+      await setTimeout(10);
 
       await expect(sql`
       update "compatible" set "state" = 'wrong' returning *
@@ -123,11 +135,21 @@ describe("tds.pg", () => {
 
       await setTimeout(10);
 
-      expect(fn).toHaveBeenNthCalledWith(1, { reference: { id: 2 }, from: "@", to: "x" });
-      expect(fn).toHaveBeenNthCalledWith(2, { reference: { id: 2 }, from: "x", to: "y" });
+      expect(fn).toHaveBeenNthCalledWith(1, {
+        reference: { id: 2 },
+        record: { id: 2, state: "x" },
+        from: "@",
+        to: "x",
+      });
+      expect(fn).toHaveBeenNthCalledWith(2, {
+        reference: { id: 2 },
+        record: { id: 2, state: "y" },
+        from: "x",
+        to: "y",
+      });
       expect(fn).toHaveBeenCalledTimes(2);
     } finally {
-      await unlisten();
+      await stop();
     }
   });
 

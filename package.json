@@ -2,6 +2,8 @@
   "type": "module",
   "name": "tds.pg",
   "version": "0.1.0",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
   "dependencies": {
     "tds.ts": "0.15.0"
   },

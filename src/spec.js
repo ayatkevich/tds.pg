@@ -193,6 +193,9 @@ describe("tds.pg", () => {
 
     await table.setup();
 
+    const fn = jest.fn();
+    const { unlisten } = await sql.listen(table.channel, (data) => fn(JSON.parse(data)));
+
     const stop = await table.handle(x);
 
     try {
@@ -205,8 +208,21 @@ describe("tds.pg", () => {
       await expect(sql`
         select * from "composite primary key"
       `).resolves.toEqual([{ id: 1, name: "a", state: "y" }]);
+
+      expect(fn).toHaveBeenCalledTimes(2);
+      expect(fn).toHaveBeenNthCalledWith(1, {
+        reference: { id: 1, name: "a" },
+        from: "@",
+        to: "x",
+      });
+      expect(fn).toHaveBeenNthCalledWith(2, {
+        reference: { id: 1, name: "a" },
+        from: "x",
+        to: "y",
+      });
     } finally {
       await stop();
+      await unlisten();
     }
   });
 });

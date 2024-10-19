@@ -70,6 +70,15 @@ create or replace function "tds_setup"(
           and conType = 'p'
     );
   begin
+    if not exists (
+      select 1
+        from pg_class
+          where relNamespace::regNamespace::text = "schema"
+            and relName = "table"
+    ) then
+      raise exception 'tds_setup: table % does not exist', "table";
+    end if;
+
     if "~primaryKey" is null then
       raise exception 'tds_setup: table % has no primary key', "table";
     end if;

@@ -71,6 +71,17 @@ describe("tds.pg", () => {
     ).rejects.toThrow("tds_setup");
   });
 
+  test("no table", async () => {
+    await expect(
+      new Table(sql, {
+        schema: "public",
+        table: "no table",
+        column: "state",
+        program: X,
+      }).setup(),
+    ).rejects.toThrow("tds_setup: table no table does not exist");
+  });
+
   test("with errors", async () => {
     await table.setup();
 

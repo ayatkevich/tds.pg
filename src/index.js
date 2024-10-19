@@ -1,4 +1,13 @@
+import { readFile } from "fs/promises";
+import path from "path";
 import { Step } from "tds.ts";
+import { fileURLToPath } from "url";
+
+const dirname = fileURLToPath(new URL(".", import.meta.url));
+
+export const definitionPath = path.join(dirname, "tds-pg.sql");
+
+export const definition = await readFile(definitionPath, "utf8");
 
 export class Table {
   constructor(sql, { schema, table, column, program }) {

@@ -1,6 +1,10 @@
 import type { Sql } from "postgres";
 import { AnyProgram, Implementation } from "tds.ts";
 
+export declare const definitionPath: string;
+
+export declare const definition: string;
+
 export declare class Table<T extends AnyProgram> {
   constructor(sql: Sql, options: { schema: string; table: string; column: string; program: T });
 

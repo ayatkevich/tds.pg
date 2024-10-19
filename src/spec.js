@@ -2,11 +2,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, jest, test } from "@
 import postgres from "postgres";
 import { Implementation, Program, Trace } from "tds.ts";
 import { setTimeout } from "timers/promises";
-import { Table } from "./index.js";
+import { definitionPath, Table } from "./index.js";
 
 describe("tds.pg", () => {
   const sql = postgres();
-  beforeAll(() => sql.file("src/tds-pg.sql"));
+  beforeAll(() => sql.file(definitionPath));
   afterAll(() => sql.end());
 
   const X = new Program([

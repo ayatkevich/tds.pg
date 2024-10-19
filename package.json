@@ -1,9 +1,14 @@
 {
   "type": "module",
   "name": "tds.pg",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "author": "Alex Yatkevich",
+  "license": "MIT",
   "main": "src/index.js",
   "types": "src/index.d.ts",
+  "files": [
+    "src/"
+  ],
   "scripts": {
     "test": "jest"
   },

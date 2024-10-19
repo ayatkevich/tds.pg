@@ -11,9 +11,9 @@ describe("tds.pg", () => {
 
   const X = new Program([
     new Trace("trace") //
-      .step("@", { output: { record: { state: "x" }, sql } })
-      .step("x", { output: { record: { state: "y" }, sql } })
-      .step("y", { output: { record: { state: "y" }, sql } }),
+      .step("@", () => ({ output: { record: { state: "x" }, sql } }))
+      .step("x", () => ({ output: { record: { state: "y" }, sql } }))
+      .step("y", () => ({ output: { record: { state: "y" }, sql } })),
   ]);
 
   const x = new Implementation(X)

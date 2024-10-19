@@ -1,12 +1,8 @@
-// @ts-ignore
-import postgres from "postgres";
+import type { Sql } from "postgres";
 import { AnyProgram, Implementation } from "tds.ts";
 
 export declare class Table<T extends AnyProgram> {
-  constructor(
-    sql: ReturnType<typeof postgres>,
-    options: { schema: string; table: string; column: string; program: T },
-  );
+  constructor(sql: Sql, options: { schema: string; table: string; column: string; program: T });
 
   channel: string;
   setup(options?: { noErrors: boolean }): Promise<void>;

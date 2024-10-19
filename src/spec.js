@@ -32,6 +32,14 @@ describe("tds.pg", () => {
         "state" text
       );
 
+      drop table if exists "composite primary key" cascade;
+      create table "composite primary key" (
+        "id" serial,
+        "name" text,
+        "state" text,
+        primary key ("id", "name")
+      );
+
       drop table if exists "no primary key" cascade;
       create table "no primary key" (
         "state" text
@@ -172,6 +180,33 @@ describe("tds.pg", () => {
     } finally {
       await stop1();
       await stop2();
+    }
+  });
+
+  test("composite primary key", async () => {
+    const table = new Table(sql, {
+      schema: "public",
+      table: "composite primary key",
+      column: "state",
+      program: X,
+    });
+
+    await table.setup();
+
+    const stop = await table.handle(x);
+
+    try {
+      await sql`
+        insert into "composite primary key" ("id", "name", "state") values (1, 'a', 'x')
+      `;
+
+      await setTimeout(10);
+
+      await expect(sql`
+        select * from "composite primary key"
+      `).resolves.toEqual([{ id: 1, name: "a", state: "y" }]);
+    } finally {
+      await stop();
     }
   });
 });

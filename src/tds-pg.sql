@@ -48,7 +48,6 @@ create or replace function "tds_notify_transition"() returns trigger as $$
   end
 $$ language plpgsql;
 
-drop function if exists "tds_setup" (text, text, text, text[][], boolean);
 create or replace function "tds_setup"(
   "schema" text,
   "table" text,

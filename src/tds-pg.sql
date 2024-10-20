@@ -80,11 +80,32 @@ create or replace function "tds_setup"(
           where nspName = "schema"
             and relName = "table"
     ) then
-      raise exception 'tds_setup: table %.% does not exist', quote_ident("schema"), quote_ident("table");
+      raise exception 'tds_setup: table %.% does not exist',
+        quote_ident("schema"),
+        quote_ident("table");
+    end if;
+
+    if not exists (
+      select
+        from pg_attribute
+          inner join pg_class
+            on attRelId = pg_class.oid
+          inner join pg_namespace
+            on relNamespace = pg_namespace.oid
+          where nspName = "schema"
+            and relName = "table"
+            and attName = "column"
+    ) then
+      raise exception 'tds_setup: table %.% has no state column %',
+        quote_ident("schema"),
+        quote_ident("table"),
+        quote_ident("column");
     end if;
 
     if "~primaryKey" is null then
-      raise exception 'tds_setup: table %.% has no primary key', quote_ident("schema"), quote_ident("table");
+      raise exception 'tds_setup: table %.% has no primary key',
+        quote_ident("schema"),
+        quote_ident("table");
     end if;
 
     execute format(

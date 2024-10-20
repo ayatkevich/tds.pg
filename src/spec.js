@@ -52,6 +52,11 @@ describe("tds.pg", () => {
       create table "no primary key" (
         "state" text
       );
+
+      drop table if exists "no column" cascade;
+      create table "no column" (
+        "id" serial primary key
+      );
     `.simple(),
   );
 
@@ -88,6 +93,17 @@ describe("tds.pg", () => {
         program: X,
       }).setup(),
     ).rejects.toThrow(`tds_setup: table public."no table" does not exist`);
+  });
+
+  test("no column", async () => {
+    await expect(
+      new Table(sql, {
+        schema: "public",
+        table: "no column",
+        column: "state",
+        program: X,
+      }).setup(),
+    ).rejects.toThrow("tds_setup");
   });
 
   test("with errors", async () => {

@@ -81,7 +81,7 @@ describe("tds.pg", () => {
         column: "state",
         program: X,
       }).setup(),
-    ).rejects.toThrow(`tds_setup: table public."no primary key" has no primary key`);
+    ).rejects.toThrow(`tds_setup: table "public"."no primary key" has no primary key`);
   });
 
   test("no table", async () => {
@@ -92,7 +92,7 @@ describe("tds.pg", () => {
         column: "state",
         program: X,
       }).setup(),
-    ).rejects.toThrow(`tds_setup: table public."no table" does not exist`);
+    ).rejects.toThrow(`tds_setup: table "public"."no table" does not exist`);
   });
 
   test("no column", async () => {
@@ -103,7 +103,18 @@ describe("tds.pg", () => {
         column: "state",
         program: X,
       }).setup(),
-    ).rejects.toThrow(`tds_setup: table public."no column" has no state column state`);
+    ).rejects.toThrow(`tds_setup: table "public"."no column" has no state column "state"`);
+  });
+
+  test("different schema", async () => {
+    const table = new Table(sql, {
+      schema: "TestSchema",
+      table: "T",
+      column: "state",
+      program: X,
+    });
+
+    await table.setup();
   });
 
   test("with errors", async () => {
@@ -259,16 +270,5 @@ describe("tds.pg", () => {
       await stop();
       await unlisten();
     }
-  });
-
-  test("different schema", async () => {
-    const table = new Table(sql, {
-      schema: "TestSchema",
-      table: "T",
-      column: "state",
-      program: X,
-    });
-
-    await table.setup();
   });
 });

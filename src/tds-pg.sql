@@ -80,9 +80,7 @@ create or replace function "tds_setup"(
           where nspName = "schema"
             and relName = "table"
     ) then
-      raise exception 'tds_setup: table %.% does not exist',
-        quote_ident("schema"),
-        quote_ident("table");
+      raise exception 'tds_setup: table "%"."%" does not exist', "schema", "table";
     end if;
 
     if not exists (
@@ -96,16 +94,11 @@ create or replace function "tds_setup"(
             and relName = "table"
             and attName = "column"
     ) then
-      raise exception 'tds_setup: table %.% has no state column %',
-        quote_ident("schema"),
-        quote_ident("table"),
-        quote_ident("column");
+      raise exception 'tds_setup: table "%"."%" has no state column "%"', "schema", "table", "column";
     end if;
 
     if "~primaryKey" is null then
-      raise exception 'tds_setup: table %.% has no primary key',
-        quote_ident("schema"),
-        quote_ident("table");
+      raise exception 'tds_setup: table "%"."%" has no primary key', "schema", "table";
     end if;
 
     execute format(

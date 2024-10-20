@@ -81,7 +81,7 @@ describe("tds.pg", () => {
         column: "state",
         program: X,
       }).setup(),
-    ).rejects.toThrow("tds_setup");
+    ).rejects.toThrow(`tds_setup: table public."no primary key" has no primary key`);
   });
 
   test("no table", async () => {
@@ -103,7 +103,7 @@ describe("tds.pg", () => {
         column: "state",
         program: X,
       }).setup(),
-    ).rejects.toThrow("tds_setup");
+    ).rejects.toThrow(`tds_setup: table public."no column" has no state column state`);
   });
 
   test("with errors", async () => {

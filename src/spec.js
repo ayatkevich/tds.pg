@@ -163,7 +163,7 @@ describe("tds.pg", () => {
   });
 
   test("without errors", async () => {
-    await table.setup({ noErrors: true });
+    await table.setup({ silent: true });
 
     const fn = jest.fn();
     const stop = await table.listen(fn);

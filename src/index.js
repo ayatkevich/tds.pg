@@ -23,14 +23,14 @@ export class Table {
     return `${this.schema}_${this.table}_${this.column}_transition`;
   }
 
-  async setup({ noErrors = false } = {}) {
+  async setup({ silent = false } = {}) {
     return this.sql`
       select "tds_setup"(
         "schema" => ${this.schema},
         "table" => ${this.table},
         "column" => ${this.column},
         "transitions" => ${this.program.transitions},
-        "no_errors" => ${noErrors}
+        "silent" => ${silent}
       )
     `;
   }

@@ -9,7 +9,7 @@ export declare class Table<T extends AnyProgram> {
   constructor(sql: Sql, options: { schema: string; table: string; column: string; program: T });
 
   channel: string;
-  setup(options?: { noErrors: boolean }): Promise<void>;
+  setup(options?: { silent: boolean }): Promise<void>;
   testOutputs(): Promise<void>;
   listen(
     fn: (data: {

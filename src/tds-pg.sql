@@ -2,7 +2,7 @@ create or replace function "tds_check_transition"() returns trigger as $$
   declare
     "~column" text = tg_argv[0];
     "~transitions" text[][] = tg_argv[1];
-    "~noErrors" boolean = tg_argv[2];
+    "~silent" boolean = tg_argv[2];
     "~old" jsonb = to_jsonb(old);
     "~new" jsonb = to_jsonb(new);
   begin
@@ -14,7 +14,7 @@ create or replace function "tds_check_transition"() returns trigger as $$
           ]
         from jsonb_array_elements(to_jsonb("~transitions")) as "~transition"
     ) then
-      if "~noErrors" then
+      if "~silent" then
         return null;
       else
         raise exception 'tds_transition_check: incorrect transition from % to %',
@@ -53,7 +53,7 @@ create or replace function "tds_setup"(
   "table" text,
   "column" text = 'state',
   "transitions" text[][] = array[]::text[][],
-  "no_errors" boolean = false
+  "silent" boolean = false
 ) returns void as $$
   declare
     "~primaryKey" text[] = (
@@ -111,7 +111,7 @@ create or replace function "tds_setup"(
       "table",
       "column",
       "transitions",
-      "no_errors"
+      "silent"
     );
 
     execute format(

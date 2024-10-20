@@ -26,6 +26,14 @@ describe("tds.pg", () => {
 
   beforeEach(() =>
     sql`
+      drop schema if exists "TestSchema" cascade;
+      create schema "TestSchema";
+
+      create table "TestSchema"."T" (
+        "id" serial primary key,
+        "state" text
+      );
+
       drop table if exists "compatible" cascade;
       create table "compatible" (
         "id" serial primary key,
@@ -79,7 +87,7 @@ describe("tds.pg", () => {
         column: "state",
         program: X,
       }).setup(),
-    ).rejects.toThrow("tds_setup: table no table does not exist");
+    ).rejects.toThrow(`tds_setup: table public."no table" does not exist`);
   });
 
   test("with errors", async () => {
@@ -235,5 +243,16 @@ describe("tds.pg", () => {
       await stop();
       await unlisten();
     }
+  });
+
+  test("different schema", async () => {
+    const table = new Table(sql, {
+      schema: "TestSchema",
+      table: "T",
+      column: "state",
+      program: X,
+    });
+
+    await table.setup();
   });
 });

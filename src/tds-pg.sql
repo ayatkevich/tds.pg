@@ -59,28 +59,32 @@ create or replace function "tds_setup"(
     "~primaryKey" text[] = (
       select array_agg(attName)
         from pg_class
+          inner join pg_namespace
+            on relNamespace = pg_namespace.oid
           inner join pg_constraint
             on conRelId = pg_class.oid
           inner join pg_attribute
             on attNum = any(conKey)
               and attRelId = pg_class.oid
         where relKind = 'r'
+          and nspName = "schema"
           and relName = "table"
-          and relNamespace::regNamespace::text = "schema"
           and conType = 'p'
     );
   begin
     if not exists (
-      select 1
+      select
         from pg_class
-          where relNamespace::regNamespace::text = "schema"
+          inner join pg_namespace
+            on relNamespace = pg_namespace.oid
+          where nspName = "schema"
             and relName = "table"
     ) then
-      raise exception 'tds_setup: table % does not exist', "table";
+      raise exception 'tds_setup: table %.% does not exist', quote_ident("schema"), quote_ident("table");
     end if;
 
     if "~primaryKey" is null then
-      raise exception 'tds_setup: table % has no primary key', "table";
+      raise exception 'tds_setup: table %.% has no primary key', quote_ident("schema"), quote_ident("table");
     end if;
 
     execute format(

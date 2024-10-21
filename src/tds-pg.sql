@@ -1,3 +1,15 @@
+drop table if exists "tds_messages";
+create table "tds_messages" (
+  "channel" text,
+  "from" text,
+  "to" text,
+  "reference" jsonb,
+  "old" jsonb,
+  "new" jsonb,
+  "state" text default 'sent',
+  "id" uuid primary key default gen_random_uuid()
+);
+
 create or replace function "tds_check_transition"() returns trigger as $$
   declare
     "~column" text = tg_argv[0];
@@ -28,22 +40,34 @@ $$ language plpgsql;
 
 create or replace function "tds_notify_transition"() returns trigger as $$
   declare
-    "~notificationName" text = tg_argv[0];
+    "~channel" text = tg_argv[0];
     "~column" text = tg_argv[1];
     "~primaryKey" text[] = tg_argv[2];
     "~old" jsonb = to_jsonb(old);
     "~new" jsonb = to_jsonb(new);
-    "~notification" jsonb = jsonb_build_object(
-      'from', coalesce("~old"->>"~column", '@'),
-      'to', "~new"->>"~column"
-    );
-    "~reference" jsonb = jsonb_build_object();
+    "~reference" jsonb = '{}'::jsonb;
     "~key" text;
+    "~messageId" uuid;
   begin
     foreach "~key" in array "~primaryKey" loop
       "~reference" = "~reference" || jsonb_build_object("~key", "~new"->"~key");
     end loop;
-    perform pg_notify("~notificationName", ("~notification" || jsonb_build_object('reference', "~reference"))::text);
+
+    insert into "tds_messages"
+      values (
+        "~channel",
+        coalesce("~old"->>"~column", '@'),
+        "~new"->>"~column",
+        "~reference",
+        "~old",
+        "~new"
+      )
+      returning "id"
+      into "~messageId";
+
+    raise notice '~messageId: %', "~messageId";
+
+    perform pg_notify("~channel", "~messageId"::text);
     return new;
   end
 $$ language plpgsql;

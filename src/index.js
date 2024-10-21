@@ -54,30 +54,15 @@ export class Table {
   }
 
   async listen(fn) {
-    return this.#listen(async ({ sql, reference, data }) => {
-      const [input] = await sql`
-        select *
-          from ${sql(this.schema)}.${sql(this.table)}
-          where ${reference}
-      `;
-
-      await fn({ ...data, record: input });
+    return this.#listen(async ({ data }) => {
+      await fn(data);
     });
   }
 
   async handle(/** @type {import("tds.ts").Implementation} */ implementation) {
     return this.#listen(async ({ sql, reference, data }) => {
-      const [input] = await sql`
-        select *
-          from ${sql(this.schema)}.${sql(this.table)}
-          where ${reference}
-            and ${this.sql(this.column)} = ${data.to}
-          for update skip locked
-      `;
-      if (!input) return;
-
       const [state, { record }] = await implementation.execute(data.from, data.to, {
-        record: input,
+        record: data.new,
         sql,
       });
 
@@ -93,14 +78,21 @@ export class Table {
   }
 
   async #listen(fn) {
-    const { unlisten } = await this.sql.listen(this.channel, async (data) => {
-      data = JSON.parse(data);
-
-      const reference = Object.entries(data.reference)
-        .map(([column, value]) => this.sql`${this.sql(column)} is not distinct from ${value}`)
-        .reduce((where, reference) => this.sql`${where} and ${reference}`, this.sql`true`);
-
+    const { unlisten } = await this.sql.listen(this.channel, async (id) => {
       await this.sql.begin(async (sql) => {
+        const [data] = await sql`
+          update "tds_messages"
+            set "state" = 'received'
+            where "id" = ${id}
+              and "state" = 'sent'
+            returning *
+        `;
+        if (!data) return;
+
+        const reference = Object.entries(data.reference)
+          .map(([column, value]) => this.sql`${this.sql(column)} is not distinct from ${value}`)
+          .reduce((where, reference) => this.sql`${where} and ${reference}`, this.sql`true`);
+
         await fn({ sql, reference, data });
       });
     });

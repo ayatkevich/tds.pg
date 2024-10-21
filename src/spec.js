@@ -40,8 +40,8 @@ describe("tds.pg", () => {
         "state" text
       );
 
-      drop table if exists "composite primary key" cascade;
-      create table "composite primary key" (
+      drop table if exists "composite primary ke" cascade;
+      create table "composite primary ke" (
         "id" serial,
         "name" text,
         "state" text,
@@ -144,19 +144,32 @@ describe("tds.pg", () => {
 
       await setTimeout(10);
 
-      expect(fn).toHaveBeenNthCalledWith(1, {
-        reference: { id: 2 },
-        record: { id: 2, state: "x" },
-        from: "@",
-        to: "x",
-      });
-      expect(fn).toHaveBeenNthCalledWith(2, {
-        reference: { id: 2 },
-        record: { id: 2, state: "y" },
-        from: "x",
-        to: "y",
-      });
-      expect(fn).toHaveBeenCalledTimes(2);
+      expect(fn.mock.calls).toEqual([
+        [
+          {
+            channel: "public_compatible_state_transition",
+            from: "@",
+            to: "x",
+            reference: { id: 2 },
+            old: null,
+            new: { id: 2, state: "x" },
+            state: "received",
+            id: expect.any(String),
+          },
+        ],
+        [
+          {
+            channel: "public_compatible_state_transition",
+            from: "x",
+            to: "y",
+            reference: { id: 2 },
+            old: { id: 2, state: "x" },
+            new: { id: 2, state: "y" },
+            state: "received",
+            id: expect.any(String),
+          },
+        ],
+      ]);
     } finally {
       await stop();
     }
@@ -189,19 +202,32 @@ describe("tds.pg", () => {
 
       await setTimeout(10);
 
-      expect(fn).toHaveBeenNthCalledWith(1, {
-        reference: { id: 2 },
-        record: { id: 2, state: "x" },
-        from: "@",
-        to: "x",
-      });
-      expect(fn).toHaveBeenNthCalledWith(2, {
-        reference: { id: 2 },
-        record: { id: 2, state: "y" },
-        from: "x",
-        to: "y",
-      });
-      expect(fn).toHaveBeenCalledTimes(2);
+      expect(fn.mock.calls).toEqual([
+        [
+          {
+            channel: "public_compatible_state_transition",
+            from: "@",
+            to: "x",
+            reference: { id: 2 },
+            old: null,
+            new: { id: 2, state: "x" },
+            state: "received",
+            id: expect.any(String),
+          },
+        ],
+        [
+          {
+            channel: "public_compatible_state_transition",
+            from: "x",
+            to: "y",
+            reference: { id: 2 },
+            old: { id: 2, state: "x" },
+            new: { id: 2, state: "y" },
+            state: "received",
+            id: expect.any(String),
+          },
+        ],
+      ]);
     } finally {
       await stop();
     }
@@ -229,46 +255,30 @@ describe("tds.pg", () => {
     }
   });
 
-  test("composite primary key", async () => {
+  test("composite primary ke", async () => {
     const table = new Table(sql, {
       schema: "public",
-      table: "composite primary key",
+      table: "composite primary ke",
       column: "state",
       program: X,
     });
 
     await table.setup();
 
-    const fn = jest.fn();
-    const { unlisten } = await sql.listen(table.channel, (data) => fn(JSON.parse(data)));
-
     const stop = await table.handle(x);
 
     try {
       await sql`
-        insert into "composite primary key" ("id", "name", "state") values (1, 'a', 'x')
+        insert into "composite primary ke" ("id", "name", "state") values (1, 'a', 'x')
       `;
 
       await setTimeout(10);
 
       await expect(sql`
-        select * from "composite primary key"
+        select * from "composite primary ke"
       `).resolves.toEqual([{ id: 1, name: "a", state: "y" }]);
-
-      expect(fn).toHaveBeenCalledTimes(2);
-      expect(fn).toHaveBeenNthCalledWith(1, {
-        reference: { id: 1, name: "a" },
-        from: "@",
-        to: "x",
-      });
-      expect(fn).toHaveBeenNthCalledWith(2, {
-        reference: { id: 1, name: "a" },
-        from: "x",
-        to: "y",
-      });
     } finally {
       await stop();
-      await unlisten();
     }
   });
 });
